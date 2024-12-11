@@ -7,21 +7,25 @@ import time
 import threading
 import datetime
 
-save_directory = ""
-temp_image_dir = ""  
+save_directory = "Cam1_2DetectionApp\\images_cam2"  # Directory for saving images
+temp_image_dir = "Cam1_2DetectionApp\\tempimages"  # Directory for temporary image storage
 
+# Ensure that the temporary image directory exists
 if not os.path.exists(temp_image_dir):
     os.makedirs(temp_image_dir)
 
+# Image paths
+cam1_image_path = "E:\\flir\\images\\thermal_image_2.jpg"
 
-cam1_image_path = ""
+# Model paths
+torpedo_classification_model_path = "E:\\flir\\Detection\\Cam1_2DetectionApp\\models\\cam1classify.pt"
+cam1_detection_model_path = "E:\\flir\\Detection\\Cam1_2DetectionApp\\models\\cam2detect.pt"
 
-torpedo_classification_model_path = ""
-cam1_detection_model_path = ""
-
+# Load models
 torpedo_classification_model = YOLO(torpedo_classification_model_path)
 cam1_detection_model = YOLO(cam1_detection_model_path)
 
+# Class to detect the largest bounding box
 class LargestBoundingBoxDetector:
     def __init__(self, model, save_directory, temp_image_dir):
         self.model = model
@@ -29,7 +33,7 @@ class LargestBoundingBoxDetector:
         self.temp_image_dir = temp_image_dir
         self.largest_box = None
         self.largest_area = 0
-        self.save_path = os.path.join(self.temp_image_dir, "largest_box_image.jpg")
+        self.save_path = os.path.join(self.temp_image_dir, "largest_box_image.jpg")  # Save in tempimages
 
     def save_image(self, source_image_path):
         print(f"Saving image to {self.save_path}")
@@ -66,9 +70,11 @@ class LargestBoundingBoxDetector:
                 return self.largest_box
         return current_box
 
+# Process image and detect objects
 def process_image(image_path, model, save_directory, temp_image_dir, check_interval=1):
     detector = LargestBoundingBoxDetector(model, save_directory, temp_image_dir)
     
+    # Initial processing and save
     detector.detect_objects(image_path)
     print(f"Initial largest bounding box: {detector.largest_box}")
     
@@ -80,11 +86,13 @@ def process_image(image_path, model, save_directory, temp_image_dir, check_inter
     except KeyboardInterrupt:
         print("Stopping the process.")
 
+# Calculate bounding box information
 def calculate_bbox_info(x1, y1, x2, y2):
     center_x = (x1 + x2) // 2
     center_y = (y1 + y2) // 2
     return center_x, center_y
 
+# Database insertion function
 def insert_detection_data(torpedo_id, center_x, center_y, width, height, camera_id):
     torpedo_id = int(torpedo_id)
     center_x = int(center_x)
@@ -93,12 +101,13 @@ def insert_detection_data(torpedo_id, center_x, center_y, width, height, camera_
     height = int(height)
     camera_id = int(camera_id)
 
+    # SQL Server connection details
     server = '192.168.1.1\SQLEXPRESS'
     database = 'flir_torpedo_monitoring'
     username = 'sa'
     password = 'hitech@1234'
 
-
+    # Connection string
     connection_string = (
         'DRIVER={ODBC Driver 17 for SQL Server};'
         f'SERVER={server};'
@@ -146,6 +155,7 @@ def insert_detection_data(torpedo_id, center_x, center_y, width, height, camera_
         cursor.close()
         conn.close()
 
+# check if torpedo in frame
 def is_torpedo_present():
     results = torpedo_classification_model.predict(source=cam1_image_path)
     if not results:
@@ -159,6 +169,9 @@ def is_torpedo_present():
             return False
     return True
 
+
+
+# Main function to start detection
 def main():
     detector_cam1 = LargestBoundingBoxDetector(cam1_detection_model, save_directory, temp_image_dir)
     torpedo_id = 100

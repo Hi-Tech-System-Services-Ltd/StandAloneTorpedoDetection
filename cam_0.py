@@ -17,9 +17,9 @@ from ultralytics import YOLO
 cam_id = 0 #replace with actual camera id {1, 2, 3}
 
 # dir paths
-temp_dir = '' #temp storeing of image for analysis
+temp_dir = '' #temp storing of image for analysis
 cam_dir = '' #final-storing of image based on cam_id
-image_dir = '' #final-stroing of image for report and DotNet application calling 
+image_dir = '' #final-storing of image for report and DotNet application calling 
 
 # image paths
 stream_image_path = "" #live stream of images from camera
